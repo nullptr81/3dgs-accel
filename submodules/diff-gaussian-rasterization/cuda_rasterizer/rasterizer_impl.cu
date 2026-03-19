@@ -197,25 +197,34 @@ __global__ void identifyTileRanges(int L, uint64_t* point_list_keys, uint2* rang
 	auto idx = cg::this_grid().thread_rank();
 	if (idx >= L)
 		return;
+    const uint32_t invalid = (uint32_t)-1;
 
 	// Read tile ID from key. Update start/end of tile range if at limit.
 	uint64_t key = point_list_keys[idx];
 	uint32_t currtile = key >> 32;
-	bool valid_tile = currtile != (uint32_t) -1;
+	// bool valid_tile = currtile != (uint32_t) -1;
+    bool curr_valid = (currtile != invalid);
 
-	if (idx == 0)
-		ranges[currtile].x = 0;
+
+	if (idx == 0){
+        if (curr_valid){
+			ranges[currtile].x = 0;
+		}
+	}
 	else
 	{
 		uint32_t prevtile = point_list_keys[idx - 1] >> 32;
 		if (currtile != prevtile)
 		{
-			ranges[prevtile].y = idx;
-			if (valid_tile) 
-			ranges[currtile].x = idx;
+			if (prevtile != invalid){
+                ranges[prevtile].y = idx;
+			}
+            if (curr_valid){
+                ranges[currtile].x = idx;
+			}
 		}
 	}
-	if (idx == L - 1 && valid_tile)
+	if (idx == L - 1 && curr_valid)
 		ranges[currtile].y = L;
 }
 
